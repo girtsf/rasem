@@ -40,22 +40,46 @@ class Rasem::SVGImage
   end
 
   # Draw a straight line between the two end points
-  def line(x1, y1, x2, y2, style=DefaultStyles[:line])
+  def line(x1, y1, x2, y2, style=nil)
     @output << %Q{<line x1="#{x1}" y1="#{y1}" x2="#{x2}" y2="#{y2}"}
-    write_style(style)
-    @output << %Q{/>}
+    write_style(style, :line)
+    @output << %Q{/>\n}
   end
 
   # Draw a circle given a center and a radius
-  def circle(cx, cy, r, style=DefaultStyles[:circle])
+  def circle(cx, cy, r, style=nil)
     @output << %Q{<circle cx="#{cx}" cy="#{cy}" r="#{r}"}
-    write_style(style)
-    @output << %Q{/>}
+    write_style(style, :circle)
+    @output << %Q{/>\n}
+  end
+
+  # Draw a circular arc given center, rad & start/end locations
+  def arc( cx, cy, rad, start_degrees=0, sweep_degrees=180, style=nil)
+      # NOTE: These arguments differ strongly from the conceptual basis
+      # of the arc as specified in SVG.  I believe these args are
+      # more intuitive for most programmers.  Note that paths in general,
+      # and even arcs, are far more capable than this wrapper indicates.
+      # For more information, see: http://www.w3.org/TR/SVG/paths.html#PathDataEllipticalArcCommands
+      def radians( degrees); 2*Math::PI * degrees / 360.0; end
+      start_x = cx + rad*Math.cos( radians(start_degrees))
+      start_y = cy - rad*Math.sin( radians(start_degrees))
+      end_x   = cx + rad*Math.cos( radians(start_degrees + sweep_degrees)) - start_x
+      end_y   = cy - rad*Math.sin( radians(start_degrees + sweep_degrees)) - start_y
+
+      sweep = sweep_degrees < 0 ? 1 : 0
+      large_arc = sweep_degrees.abs > 180 ? 1 : 0
+
+      transform_degs = 0
+      
+      @output << %Q{<path d="M#{start_x},#{start_y} \
+      a#{rad},#{rad} #{transform_degs} #{large_arc},#{sweep} #{end_x},#{end_y}"}
+      write_style( style, :circle)
+      @output << %Q{/>\n}
   end
 
   # Draw a rectangle or rounded rectangle
   def rectangle(x, y, width, height, *args)
-    style = (!args.empty? && args.last.is_a?(Hash)) ? args.pop : DefaultStyles[:rect]
+    style = (!args.empty? && args.last.is_a?(Hash)) ? args.pop : nil
     if args.length == 0
       rx = ry = 0
     elsif args.length == 1
@@ -68,15 +92,15 @@ class Rasem::SVGImage
 
     @output << %Q{<rect x="#{x}" y="#{y}" width="#{width}" height="#{height}"}
     @output << %Q{ rx="#{rx}" ry="#{ry}"} if rx && ry
-    write_style(style)
-    @output << %Q{/>}
+    write_style(style, :rectangle)
+    @output << %Q{/>\n}
   end
 
   # Draw an circle given a center and two radii
-  def ellipse(cx, cy, rx, ry, style=DefaultStyles[:ellipse])
+  def ellipse(cx, cy, rx, ry, style=nil)
     @output << %Q{<ellipse cx="#{cx}" cy="#{cy}" rx="#{rx}" ry="#{ry}"}
-    write_style(style)
-    @output << %Q{/>}
+    write_style(style, :ellipse)
+    @output << %Q{/>\n}
   end
 
   def polygon(*args)
@@ -101,34 +125,58 @@ class Rasem::SVGImage
     @closed
   end
 
-  def with_style(style={}, &proc)
-    # Merge passed style with current default style
-    updated_style = default_style.merge(style)
-    # Push updated style to the stack
-    @default_styles.push(updated_style)
+  def with_style( style={}, &proc)
+    set_style( style)
     # Call the block
     self.instance_exec(&proc)
-    # Pop style again to revert changes
-    @default_styles.pop
+    unset_style
+  end      
+  
+  def set_style( style)
+      # Merge passed style with current default style
+     updated_style = default_style.merge( style) 
+     # Push updated style to the stack
+     @default_styles.push( updated_style)
   end
 
-  def group(style={}, &proc)
+  def unset_style
+      # Pop style again to revert changes
+      @default_styles.pop
+  end
+
+  def group(style={}, translate_xy=nil, rotate=nil, &proc)
     # Open the group
-    @output << "<g"
-    write_style(style)
-    @output << ">"
+    start_group( style, translate_xy, rotate)
     # Call the block
     self.instance_exec(&proc)
     # Close the group
-    @output << "</g>"
+    end_group
   end
 
-  def text(x, y, text, style=DefaultStyles[:text])
+  def start_group( style={}, translate_xy=nil, rotate=nil)
+    @output << "<g "
+    if translate_xy
+        x, y = translate_xy
+        @output << "transform=\"translate( #{x}, #{y})\" "
+    end
+    if rotate
+        @output << "transform=\"rotate( #{rotate})\" "
+    end
+    write_style(style)
+    @output << ">\n"      
+  end
+  
+  def end_group
+    @output << "</g>\n"      
+  end
+  
+  def text(x, y, text, style=nil)
     @output << %Q{<text x="#{x}" y="#{y}"}
-    style = fix_style(default_style.merge(style))
+    style = DefaultStyles[:text] unless style
+    style = fix_style( default_style.merge(style))
     @output << %Q{ font-family="#{style.delete "font-family"}"} if style["font-family"]
     @output << %Q{ font-size="#{style.delete "font-size"}"} if style["font-size"]
-    write_style style
+    write_style( style, :text)
     @output << ">"
     dy = 0      # First line should not be shifted
     text.each_line do |line|
@@ -171,7 +219,7 @@ private
   # Draws either a polygon or polyline according to the first parameter
   def polything(name, *args)
     return if args.empty?
-    style = (args.last.is_a?(Hash)) ? args.pop : DefaultStyles[name.to_sym]
+    style = (args.last.is_a?(Hash)) ? args.pop : nil
     coords = args.flatten
     raise "Illegal number of coordinates (should be even)" if coords.length.odd?
     @output << %Q{<#{name} points="}
@@ -182,7 +230,7 @@ private
       @output << " " unless coords.empty?
     end
     @output << '"'
-    write_style(style)
+    write_style(style, name.to_sym)
     @output << '/>'
   end
 
@@ -209,7 +257,10 @@ private
   # fill-opacity: fill opacity. ranges from 0 to 1
   # stroke-opacity: stroke opacity. ranges from 0 to 1
   # opacity: Opacity for the whole element
-  def write_style(style)
+  def write_style(style, caller=nil)
+    if not style
+      style = DefaultStyles.fetch( caller, {}).merge( default_style)
+    end
     style_ = fix_style(default_style.merge(style))
     return if style_.empty?
     @output << ' style="'
@@ -219,4 +270,5 @@ private
     @output << '"'
   end
 end
+
 

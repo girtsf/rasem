@@ -1,4 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
+require 'tempfile'
 
 describe Rasem::SVGImage do
   it "should initialize an empty image" do
@@ -79,7 +80,23 @@ describe Rasem::SVGImage do
     str.should =~ %r{style=}
     str.should =~ %r{fill:white}
   end
-
+  
+  it "should draw an arc" do
+    img = Rasem::SVGImage.new(100, 100) do
+      arc( 10, 10, 5, 0, 135)
+    end
+    str = img.output
+    str.should =~ %r{<path.*a.*?>}
+  end
+  
+  it "should draw an arc with style" do
+    img = Rasem::SVGImage.new(100, 100) do
+      arc( 10, 10, 5, 0, 135, {:stroke => "green"})
+    end
+    str = img.output
+    str.should =~ %r{<path.*a.*?stroke.*?green.*?>}
+  end  
+  
   it "should draw a rectangle" do
     img = Rasem::SVGImage.new(100, 100) do
       rectangle(0, 0, 100, 300)
@@ -249,6 +266,17 @@ describe Rasem::SVGImage do
     str.should_not =~ %r{stroke-width:5}
   end
   
+  it "should explicit styles should override default styles" do
+     img = Rasem::SVGImage.new(100, 100) do
+         with_style :stroke=>"green" do
+             circle( 0, 0, 10)
+         end
+     end
+     str = img.output
+     str.should_not =~ %r{stroke:black}
+     str.should =~ %r{stroke:green}
+  end
+  
   it "should create a group" do
     img = Rasem::SVGImage.new(100, 100) do
       group :stroke_width=>3 do
@@ -257,7 +285,66 @@ describe Rasem::SVGImage do
       end
     end
     str = img.output
-    str.should =~ %r{<g .*circle.*circle.*</g>}
+    str.should =~ %r{<g .*circle.*circle.*</g>}m
+  end
+  
+  it "should apply translation to group when specified" do
+    img = Rasem::SVGImage.new(100, 100) do
+      group( {:stroke_width=>3}, [25, 30] ) do
+        circle(0, 0, 10)
+      end
+    end
+    str = img.output
+    str.should =~ %r{<g .*translate.*?25,.*?30.*</g>}m
+  end
+  
+  it "should apply rotation to group when specified" do
+    img = Rasem::SVGImage.new(100, 100) do
+      group( {:stroke_width=>3}, nil, 45 ) do
+        circle(0, 0, 10)
+      end
+    end
+    str = img.output
+    str.should =~ %r{<g.*rotate.*?45.*</g>}m
+  end     
+
+  it "should not apply transforms when not specified" do
+    img = Rasem::SVGImage.new(100, 100) do
+      group( {:stroke_width=>3}) do
+        circle(0, 0, 10)
+      end
+    end
+    str = img.output
+    str.should_not =~ %r{<g .*transform.*</g>}m      
+  end
+  
+  it "should allow Image creation without block" do
+    img = Rasem::SVGImage.new(100, 100)
+    str = img.output
+    str.should =~ %r{width="100"}
+    str.should =~ %r{height="100"}     
+  end
+  
+  it "should allow style to be specified without block" do
+    img = Rasem::SVGImage.new(100, 100) do
+        set_style( {:stroke => "green"})
+        circle( 0, 0, 10)
+        unset_style
+        line( 0, 0, 10, 10)
+    end
+    str = img.output
+    str.should =~ %r{circle.*?stroke.*?green}
+    str.should_not =~ %r{line.*?green}
+  end
+  
+  it "should allow group to be specified without block" do
+    img = Rasem::SVGImage.new(100, 100) do
+        start_group( {:stroke =>"green"} )
+            circle( 0, 0, 10)
+        end_group
+    end
+    str = img.output
+    str.should =~ %r{<g .*circle.*</g>}m   
   end
   
   it "should update width and height after init" do
@@ -298,4 +385,34 @@ describe Rasem::SVGImage do
     str.should =~ %r{font-size="24"}
   end
 
+  it "should generate an image out of a .rasem file" do
+    rasem_file = Tempfile.new("temp.rasem")
+    rasem_file.puts "circle 50, 50, 50"
+    rasem_file.close
+    
+    File.should_not be_exists(rasem_file.path+".svg")
+    Rasem::Application.run!(rasem_file.path)
+    
+    File.should be_exists(rasem_file.path+".svg")
+  end
+  
+  it "should raise an exception for a malformed .rasem file" do
+    rasem_file = Tempfile.new("temp.rasem")
+    rasem_file.puts "@x.asdf"
+    rasem_file.close
+    
+    lambda { Rasem::Application.run!(rasem_file.path) }.should raise_error
+  end
+  
+  it "should generate only the portion of backtrace in .rasem file" do
+    rasem_file = Tempfile.new("temp.rasem")
+    rasem_file.puts "@x.asdf"
+    rasem_file.close
+    
+    begin
+      Rasem::Application.run!(rasem_file.path)
+    rescue Exception => e
+      e.backtrace.should have(1).lines
+    end
+  end
 end
