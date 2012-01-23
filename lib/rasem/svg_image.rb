@@ -155,12 +155,16 @@ class Rasem::SVGImage
 
   def start_group( style={}, translate_xy=nil, rotate=nil)
     @output << "<g "
-    if translate_xy
-        x, y = translate_xy
-        @output << "transform=\"translate( #{x}, #{y})\" "
-    end
-    if rotate
-        @output << "transform=\"rotate( #{rotate})\" "
+    if translate_xy or rotate
+        @output << "transform="
+        if translate_xy
+            x, y = translate_xy
+            @output << "\"translate( #{x}, #{y}) "
+        end
+        if rotate
+            @output << "\"rotate( #{rotate}) "
+        end
+        output << "\""
     end
     write_style(style)
     @output << ">\n"      
@@ -231,7 +235,7 @@ private
     end
     @output << '"'
     write_style(style, name.to_sym)
-    @output << '/>'
+    @output << "/>\n"
   end
 
   # Return current deafult style

@@ -306,7 +306,17 @@ describe Rasem::SVGImage do
     end
     str = img.output
     str.should =~ %r{<g.*rotate.*?45.*</g>}m
-  end     
+  end
+  
+  it "should only contain one transform tag per group" do
+    img = Rasem::SVGImage.new(100, 100) do
+      group( {:stroke_width=>3}, [20, 20], 45 ) do
+        circle(0, 0, 10)
+      end
+    end
+    str = img.output
+    str.should_not =~ %r{<g.*transform.*?transform.*?>}
+  end
 
   it "should not apply transforms when not specified" do
     img = Rasem::SVGImage.new(100, 100) do
