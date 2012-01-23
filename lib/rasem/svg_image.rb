@@ -41,14 +41,14 @@ class Rasem::SVGImage
 
   # Draw a straight line between the two end points
   def line(x1, y1, x2, y2, style=nil)
-    @output << %Q{<line x1="#{x1}" y1="#{y1}" x2="#{x2}" y2="#{y2}"}
+    @output << %Q{<line x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f"} %[x1, y1,x2,y2 ]
     write_style(style, :line)
     @output << %Q{/>\n}
   end
 
   # Draw a circle given a center and a radius
   def circle(cx, cy, r, style=nil)
-    @output << %Q{<circle cx="#{cx}" cy="#{cy}" r="#{r}"}
+    @output << %Q{<circle cx="%.2f" cy="%.2f" r="%.2f"}%[cx, cy, r]
     write_style(style, :circle)
     @output << %Q{/>\n}
   end
@@ -71,8 +71,9 @@ class Rasem::SVGImage
 
       transform_degs = 0
       
-      @output << %Q{<path d="M#{start_x},#{start_y} \
-      a#{rad},#{rad} #{transform_degs} #{large_arc},#{sweep} #{end_x},#{end_y}"}
+      args = [start_x, start_y, rad, rad, transform_degs, large_arc, sweep, end_x, end_y]
+      
+      @output << %Q{<path d="M%.2f,%.2f a%.2f,%.2f %.2f %d,%d %.2f,%.2f"}%args
       write_style( style, :circle)
       @output << %Q{/>\n}
   end
@@ -90,15 +91,15 @@ class Rasem::SVGImage
       raise "Illegal number of arguments to rectangle"
     end
 
-    @output << %Q{<rect x="#{x}" y="#{y}" width="#{width}" height="#{height}"}
-    @output << %Q{ rx="#{rx}" ry="#{ry}"} if rx && ry
+    @output << %Q{<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f"}%[x, y, width, height]
+    @output << %Q{ rx="%.2f" ry="%.2f"}%[rx,ry] if rx && ry
     write_style(style, :rectangle)
     @output << %Q{/>\n}
   end
 
   # Draw an circle given a center and two radii
   def ellipse(cx, cy, rx, ry, style=nil)
-    @output << %Q{<ellipse cx="#{cx}" cy="#{cy}" rx="#{rx}" ry="#{ry}"}
+    @output << %Q{<ellipse cx="%.2f" cy="%.2f" rx="%.2f" ry="%.2f"}%[cx, cy, rx, ry]
     write_style(style, :ellipse)
     @output << %Q{/>\n}
   end
@@ -159,10 +160,10 @@ class Rasem::SVGImage
         @output << "transform="
         if translate_xy
             x, y = translate_xy
-            @output << "\"translate( #{x}, #{y}) "
+            @output << "\"translate( %.2f, %.2f) "%[x,y]
         end
         if rotate
-            @output << "\"rotate( #{rotate}) "
+            @output << "\"rotate( %.2f) "%[rotate]
         end
         output << "\""
     end
@@ -175,7 +176,7 @@ class Rasem::SVGImage
   end
   
   def text(x, y, text, style=nil)
-    @output << %Q{<text x="#{x}" y="#{y}"}
+    @output << %Q{<text x="%.2f" y="%.2f"}%[x,y]
     style = DefaultStyles[:text] unless style
     style = fix_style( default_style.merge(style))
     @output << %Q{ font-family="#{style.delete "font-family"}"} if style["font-family"]
@@ -230,7 +231,7 @@ private
     until coords.empty? do
       x = coords.shift
       y = coords.shift
-      @output << "#{x},#{y}"
+      @output << "%.2f,%.2f"%[x,y]
       @output << " " unless coords.empty?
     end
     @output << '"'
