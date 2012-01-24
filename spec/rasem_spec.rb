@@ -34,10 +34,10 @@ describe Rasem::SVGImage do
     img.close
     str = img.output
     str.should =~ %r{<line}
-    str.should =~ %r{x1="0"}
-    str.should =~ %r{y1="0"}
-    str.should =~ %r{x2="100"}
-    str.should =~ %r{y2="100"}
+    str.should =~ %r{x1="0.00"}
+    str.should =~ %r{y1="0.00"}
+    str.should =~ %r{x2="100.00"}
+    str.should =~ %r{y2="100.00"}
   end
   
   it "should draw line using a block" do
@@ -46,10 +46,10 @@ describe Rasem::SVGImage do
     end
     str = img.output
     str.should =~ %r{<line}
-    str.should =~ %r{x1="0"}
-    str.should =~ %r{y1="0"}
-    str.should =~ %r{x2="100"}
-    str.should =~ %r{y2="100"}
+    str.should =~ %r{x1="0.00"}
+    str.should =~ %r{y1="0.00"}
+    str.should =~ %r{x2="100.00"}
+    str.should =~ %r{y2="100.00"}
   end
 
   it "should draw a line with style" do
@@ -67,9 +67,9 @@ describe Rasem::SVGImage do
     end
     str = img.output
     str.should =~ %r{<circle}
-    str.should =~ %r{cx="0"}
-    str.should =~ %r{cy="0"}
-    str.should =~ %r{r="10"}
+    str.should =~ %r{cx="0.00"}
+    str.should =~ %r{cy="0.00"}
+    str.should =~ %r{r="10.00"}
   end
 
   it "should draw a circle with style" do
@@ -103,8 +103,8 @@ describe Rasem::SVGImage do
     end
     str = img.output
     str.should =~ %r{<rect}
-    str.should =~ %r{width="100"}
-    str.should =~ %r{height="300"}
+    str.should =~ %r{width="100.00"}
+    str.should =~ %r{height="300.00"}
   end
 
   it "should draw a rectangle with style" do
@@ -122,10 +122,10 @@ describe Rasem::SVGImage do
     end
     str = img.output
     str.should =~ %r{<rect}
-    str.should =~ %r{width="100"}
-    str.should =~ %r{height="300"}
-    str.should =~ %r{rx="20"}
-    str.should =~ %r{ry="20"}
+    str.should =~ %r{width="100.00"}
+    str.should =~ %r{height="300.00"}
+    str.should =~ %r{rx="20.00"}
+    str.should =~ %r{ry="20.00"}
   end
 
   it "should draw a symmetric rounded-rectangle with style" do
@@ -143,10 +143,10 @@ describe Rasem::SVGImage do
     end
     str = img.output
     str.should =~ %r{<rect}
-    str.should =~ %r{width="100"}
-    str.should =~ %r{height="300"}
-    str.should =~ %r{rx="20"}
-    str.should =~ %r{ry="5"}
+    str.should =~ %r{width="100.00"}
+    str.should =~ %r{height="300.00"}
+    str.should =~ %r{rx="20.00"}
+    str.should =~ %r{ry="5.00"}
   end
 
   it "should draw a non-symmetric rounded-rectangle with style" do
@@ -164,10 +164,10 @@ describe Rasem::SVGImage do
     end
     str = img.output
     str.should =~ %r{<ellipse}
-    str.should =~ %r{cx="0"}
-    str.should =~ %r{cy="0"}
-    str.should =~ %r{rx="100"}
-    str.should =~ %r{ry="300"}
+    str.should =~ %r{cx="0.00"}
+    str.should =~ %r{cy="0.00"}
+    str.should =~ %r{rx="100.00"}
+    str.should =~ %r{ry="300.00"}
   end
 
   it "should draw an ellipse with style" do
@@ -185,7 +185,7 @@ describe Rasem::SVGImage do
     end
     str = img.output
     str.should =~ %r{<polygon}
-    str.should =~ %r{points="0,0 1,2 3,4"}
+    str.should =~ %r{points="0.00,0.00 1.00,2.00 3.00,4.00"}
   end
 
   it "should draw a polygon with style" do
@@ -203,7 +203,7 @@ describe Rasem::SVGImage do
     end
     str = img.output
     str.should =~ %r{<polyline}
-    str.should =~ %r{points="0,0 1,2 3,4"}
+    str.should =~ %r{points="0.00,0.00 1.00,2.00 3.00,4.00"}
   end
 
   it "should fix style names" do
@@ -295,7 +295,7 @@ describe Rasem::SVGImage do
       end
     end
     str = img.output
-    str.should =~ %r{<g .*translate.*?25,.*?30.*</g>}m
+    str.should =~ %r{<g .*translate.*?25.00,.*?30.*</g>}m
   end
   
   it "should apply rotation to group when specified" do
@@ -373,8 +373,8 @@ describe Rasem::SVGImage do
     end
     str = img.output
     str.should =~ %r{<text}
-    str.should =~ %r{x="10"}
-    str.should =~ %r{y="20"}
+    str.should =~ %r{x="10.00"}
+    str.should =~ %r{y="20.00"}
     str.should =~ %r{Hello world!}
   end
 
