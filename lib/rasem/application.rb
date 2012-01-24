@@ -19,7 +19,7 @@ class Rasem::Application
       end
       img = Rasem::SVGImage.new("100%", "100%") do
         begin
-          load File.expand_path(source_file)
+          eval(File.read(File.expand_path(source_file)), binding, source_file, 1)
         rescue Exception => e
           # Keep the portion of stack trace that belongs to the .rasem file
           backtrace = e.backtrace.grep(Regexp.new(File.expand_path(source_file)))
