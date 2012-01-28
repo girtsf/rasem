@@ -288,7 +288,7 @@ describe Rasem::SVGImage do
     str.should =~ %r{<g .*circle.*circle.*</g>}m
   end
   
-  it "should apply translation to group when specified" do
+  it "should translate group" do
     img = Rasem::SVGImage.new(100, 100) do
       group( {:stroke_width=>3}, [25, 30] ) do
         circle(0, 0, 10)
@@ -298,7 +298,7 @@ describe Rasem::SVGImage do
     str.should =~ %r{<g .*translate.*?25,.*?30.*</g>}m
   end
   
-  it "should apply rotation to group when specified" do
+  it "should rotate group" do
     img = Rasem::SVGImage.new(100, 100) do
       group( {:stroke_width=>3}, nil, 45 ) do
         circle(0, 0, 10)
@@ -307,6 +307,26 @@ describe Rasem::SVGImage do
     str = img.output
     str.should =~ %r{<g.*rotate.*?45.*</g>}m
   end
+  
+  it "should scale group uniformly when given a single value" do
+    img = Rasem::SVGImage.new(100, 100) do
+      group( {:stroke_width=>3}, nil, nil, 25 ) do
+        circle(0, 0, 10)
+      end
+    end
+    str = img.output
+    str.should =~ %r{<g.*scale.*?25.*</g>}m      
+  end
+  
+  it "should scale group by x & y when given an array" do
+    img = Rasem::SVGImage.new(100, 100) do
+      group( {:stroke_width=>3}, nil, nil, [25, 10] ) do
+        circle(0, 0, 10)
+      end
+    end
+    str = img.output
+    str.should =~ %r{<g.*scale.*?25, 10.*</g>}m      
+  end  
   
   it "should only contain one transform tag per group" do
     img = Rasem::SVGImage.new(100, 100) do

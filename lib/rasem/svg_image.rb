@@ -144,27 +144,35 @@ class Rasem::SVGImage
       @default_styles.pop
   end
 
-  def group(style={}, translate_xy=nil, rotate=nil, &proc)
+  def group(style={}, translate_xy=nil, rotate=nil, scale_xy=nil, &proc)
     # Open the group
-    start_group( style, translate_xy, rotate)
+    start_group( style, translate_xy, rotate, scale_xy)
     # Call the block
     self.instance_exec(&proc)
     # Close the group
     end_group
   end
 
-  def start_group( style={}, translate_xy=nil, rotate=nil)
+  def start_group( style={}, translate_xy=nil, rotate=nil, scale_xy=nil)
     @output << "<g "
-    if translate_xy or rotate
+    if translate_xy or rotate or scale_xy
         @output << "transform="
         if translate_xy
             x, y = translate_xy
-            @output << "\"translate( #{x}, #{y}) "
+            @output << "\"translate( #{x}, #{y})\" "
         end
         if rotate
-            @output << "\"rotate( #{rotate}) "
+            @output << "\"rotate( #{rotate})\" "
         end
-        output << "\""
+        if scale_xy
+            # if scale_xy is a single value, we'll scale in both directions
+            # if it's a list, scale x by the first value and y by the second
+            if scale_xy.kind_of? Array
+                @output << "\"scale( #{scale_xy[0]}, #{scale_xy[1]})\" "
+            else
+                @output << "\"scale( #{scale_xy})\" "
+            end
+        end
     end
     write_style(style)
     @output << ">\n"      
