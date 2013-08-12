@@ -46,6 +46,10 @@ describe Rasem::SVGImage do
     str.should =~ %r{viewBox="foo"}
   end
 
+  it "should raise for unknown option" do
+    expect { Rasem::SVGImage.new(100, 100, meh: 'foo') }.to raise_error
+  end
+
   it "should draw line using method" do
     img = Rasem::SVGImage.new(100, 100)
     img.line(0, 0, 100, 100)
@@ -449,7 +453,7 @@ describe Rasem::SVGImage do
     rasem_file.puts "@x.asdf"
     rasem_file.close
     
-    lambda { Rasem::Application.run!(rasem_file.path) }.should raise_error
+    expect { Rasem::Application.run!(rasem_file.path) }.to raise_error
   end
   
   it "should generate only the portion of backtrace in .rasem file" do

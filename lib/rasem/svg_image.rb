@@ -24,6 +24,13 @@ class Rasem::SVGImage
     end
 
     output ||= opts[:output]  # Can be nil.
+    opts.delete(:output)
+
+    viewbox = opts.delete(:viewbox)
+
+    if !opts.empty?
+      raise "Invalid option(s): #{opts.keys.join(',')}"
+    end
 
     # @output will be either a string or a file-like object.
     @output = create_output(output)
@@ -31,7 +38,7 @@ class Rasem::SVGImage
     # Initialize a stack of default styles
     @default_styles = []
 
-    write_header(width, height, opts[:viewbox])
+    write_header(width, height, viewbox)
     if block
       self.instance_exec(&block)
       self.close
