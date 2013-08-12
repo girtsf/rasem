@@ -27,7 +27,25 @@ describe Rasem::SVGImage do
     end
     img.should be_closed
   end
-  
+
+  it "should output to a given output object" do
+    f = ''
+    img = Rasem::SVGImage.new(100, 100, f)
+    f.should =~ %r{width="100"}
+  end
+
+  it "should not have a viewbox by default" do
+    img = Rasem::SVGImage.new(100, 100)
+    str = img.output
+    str.should_not =~ %r{viewBox}
+  end
+
+  it "should support viewbox option" do
+    img = Rasem::SVGImage.new(100, 100, viewbox: 'foo')
+    str = img.output
+    str.should =~ %r{viewBox="foo"}
+  end
+
   it "should draw line using method" do
     img = Rasem::SVGImage.new(100, 100)
     img.line(0, 0, 100, 100)

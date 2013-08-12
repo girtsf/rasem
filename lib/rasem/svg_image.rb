@@ -9,14 +9,29 @@ class Rasem::SVGImage
     :polyline => {:stroke=>"black"}
   }
 
+  def initialize(width, height, *args, &block)
+    # Backwards compatibility - first optional arg could be output.
+    if !args.empty? && !args[0].is_a?(Hash)
+      output = args.shift
+    end
+    # Otherwise, expect an opts hash.
+    if !args.empty?
+      raise 'Invalid number of arguments' unless args.size == 1
+      opts = args[0]
+      raise 'Option arguments should be a hash' unless opts.is_a?(Hash)
+    else
+      opts = {}
+    end
 
-  def initialize(width, height, output=nil, &block)
+    output ||= opts[:output]  # Can be nil.
+
+    # @output will be either a string or a file-like object.
     @output = create_output(output)
 
     # Initialize a stack of default styles
     @default_styles = []
 
-    write_header(width, height)
+    write_header(width, height, opts[:viewbox])
     if block
       self.instance_exec(&block)
       self.close
@@ -213,12 +228,17 @@ private
   end
 
   # Writes file header
-  def write_header(width, height)
+  def write_header(width, height, viewbox)
+    if viewbox.nil?
+      viewbox_str = ''
+    else
+      viewbox_str = "viewBox=\"#{viewbox}\""
+    end
     @output << <<-HEADER
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="#{width}" height="#{height}" version="1.1"
+<svg width="#{width}" height="#{height}" version="1.1" #{viewbox_str}
   xmlns="http://www.w3.org/2000/svg">
     HEADER
   end
